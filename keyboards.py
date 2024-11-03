@@ -31,8 +31,16 @@ async def generate_mirage_a_keyboard():
 async def generate_mirage_a_ct_keyboard():
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton('Смотреть видео', callback_data='ct_watch_video'))
-    markup.add(InlineKeyboardButton('Вернуться назад', callback_data='ct_back'))
+    markup.add(InlineKeyboardButton('Вернуться назад', callback_data='mir_a_back'))
     markup.add(InlineKeyboardButton('Смена карты', callback_data='ct_change_map'))
+    return markup
+
+# Функция для создания вложенной клавиатуры для stairs, Точки A на карте Mirage
+async def generate_mirage_a_stairs_keyboard():
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton('Смотреть видео', callback_data='stairs_watch_video'))
+    markup.add(InlineKeyboardButton('Вернуться назад', callback_data='stairs_back'))
+    markup.add(InlineKeyboardButton('Смена карты', callback_data='stairs_change_map'))
     return markup
 
 #Inferno
