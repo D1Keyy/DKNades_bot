@@ -1,17 +1,20 @@
 from aiogram import Bot, types
-from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.utils import executor
 from aiogram.types import InputFile
 from aiogram.dispatcher.filters.state import State, StatesGroup
 import config
 from keyboards import (
-    generate_main_keyboard,
+    generate_language_keyboard,
+    generate_maps_keyboard,
     generate_mirage_keyboard,
     generate_dust2_keyboard,
     generate_inferno_keyboard,
     generate_mirage_a_keyboard,
     generate_mirage_a_ct_keyboard,
     generate_mirage_a_stairs_keyboard
+    generate_mirage_b_keyboard,
+    generate_mirage_b_site_keyboard,
 )
 
 bot = Bot(token=config.bot_token)
@@ -27,7 +30,8 @@ async def command_start(message: types.Message):
     try:
         await bot.send_photo(message.from_user.id, InputFile('photo/logo.png'), caption='Welcome! / Добро пожаловать!')
         await bot.send_message(message.from_user.id, "Please select your language / Пожалуйста, выберите язык",
-                               reply_markup=await generate_language_keyboard())
+                               reply_markup=await generate_language_keyboard()
+        )
     except Exception as e:
         print(e)
         await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
@@ -41,39 +45,38 @@ async def set_language(call: types.CallbackQuery, state: FSMContext):
         await state.update_data(language=language)
 
         # Показать выбор карты после выбора языка
-        reply_markup = await generate_main_keyboard(language)
+        reply_markup = await generate_maps_keyboard(language)  # Изменено на generate_maps_keyboard
         greeting = "Выберите карту" if language == 'ru' else "Choose a map"
         await bot.send_message(call.from_user.id, greeting, reply_markup=reply_markup)
     except Exception as e:
         print(e)
         await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
 
+    @dp.callback_query_handler(lambda x: str(x.data).startswith('main'))
+    async def command_main(call: types.CallbackQuery, state: FSMContext):
+        try:
+            await call.answer()
+            data = await state.get_data()
+            language = data.get('language', 'en')
 
-@dp.callback_query_handler(lambda x: str(x.data).startswith('main'))
-async def command_main(call: types.CallbackQuery, state: FSMContext):
-    try:
-        await call.answer()
-        data = await state.get_data()
-        language = data.get('language', 'en')  # Значение по умолчанию — английский
+            karta = call.data.split('_')[1]
+            print(karta)
 
-        karta = call.data.split('_')[1]
-        print(karta)
-
-        if karta == 'mirage':
-            text = f'Вы выбрали карту Mirage' if language == 'ru' else 'You selected Mirage'
-            await bot.send_message(call.from_user.id, text, reply_markup=await generate_mirage_keyboard())
-        elif karta == 'dust2':
-            text = f'Вы выбрали карту Dust2' if language == 'ru' else 'You selected Dust2'
-            await bot.send_message(call.from_user.id, text, reply_markup=await generate_dust2_keyboard())
-        elif karta == 'inferno':
-            text = f'Вы выбрали карту Inferno' if language == 'ru' else 'You selected Inferno'
-            await bot.send_message(call.from_user.id, text, reply_markup=await generate_inferno_keyboard())
-        else:
-            text = 'Эта карта пока не поддерживается.' if language == 'ru' else 'This map is not supported yet.'
-            await bot.send_message(call.from_user.id, text)
-    except Exception as e:
-        print(e)
-        await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
+            if karta == 'mirage':
+                text = f'Вы выбрали карту Mirage' if language == 'ru' else 'You selected Mirage'
+                await bot.send_message(call.from_user.id, text, reply_markup=await generate_mirage_keyboard())
+            elif karta == 'dust2':
+                text = f'Вы выбрали карту Dust2' if language == 'ru' else 'You selected Dust2'
+                await bot.send_message(call.from_user.id, text, reply_markup=await generate_dust2_keyboard())
+            elif karta == 'inferno':
+                text = f'Вы выбрали карту Inferno' if language == 'ru' else 'You selected Inferno'
+                await bot.send_message(call.from_user.id, text, reply_markup=await generate_inferno_keyboard())
+            else:
+                text = 'Эта карта пока не поддерживается.' if language == 'ru' else 'This map is not supported yet.'
+                await bot.send_message(call.from_user.id, text)
+        except Exception as e:
+            print(e)
+            await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
 
 
 @dp.callback_query_handler(lambda x: x.data == 'mirage_a')
@@ -154,7 +157,7 @@ async def change_map(call: types.CallbackQuery, state: FSMContext):
     await bot.send_message(
         call.from_user.id,
         text,
-        reply_markup=await generate_main_keyboard(language)
+        reply_markup=await generate_maps_keyboard(language)
     )
 
 
