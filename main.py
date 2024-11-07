@@ -2,6 +2,7 @@ from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 from aiogram.types import InputFile
+from aiogram.dispatcher.filters.state import State, StatesGroup
 import config
 from keyboards import (
     generate_main_keyboard,
