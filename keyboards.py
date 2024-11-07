@@ -1,6 +1,23 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, \
     InlineKeyboardButton
 
+async def generate_language_keyboard():
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton('Русский', callback_data='lang_ru'))
+    markup.add(InlineKeyboardButton('English', callback_data='lang_en'))
+    return markup
+
+async def generate_main_keyboard(language):
+    markup = InlineKeyboardMarkup()
+    if language == 'ru':
+        markup.add(InlineKeyboardButton('Mirage', callback_data='main_mirage'))
+        markup.add(InlineKeyboardButton('Dust2', callback_data='main_dust2'))
+        markup.add(InlineKeyboardButton('Inferno', callback_data='main_inferno'))
+    elif language == 'en':
+        markup.add(InlineKeyboardButton('Mirage', callback_data='main_mirage'))
+        markup.add(InlineKeyboardButton('Dust2', callback_data='main_dust2'))
+        markup.add(InlineKeyboardButton('Inferno', callback_data='main_inferno'))
+    return markup
 
 async def generate_main_keyboard():
     markup = InlineKeyboardMarkup()

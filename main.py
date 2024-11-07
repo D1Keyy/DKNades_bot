@@ -16,128 +16,145 @@ from keyboards import (
 bot = Bot(token=config.bot_token)
 dp = Dispatcher(bot)
 
+
+class UserState(StatesGroup):
+    language = State()
+
+
 @dp.message_handler(commands='start')
 async def command_start(message: types.Message):
     try:
-        await bot.send_photo(message.from_user.id, InputFile('photo/logo.png'), caption='Подпись')
-        await bot.send_message(message.from_user.id, config.hi_message, reply_markup=await generate_main_keyboard())
+        await bot.send_photo(message.from_user.id, InputFile('photo/logo.png'), caption='Welcome! / Добро пожаловать!')
+        await bot.send_message(message.from_user.id, "Please select your language / Пожалуйста, выберите язык",
+                               reply_markup=await generate_language_keyboard())
     except Exception as e:
         print(e)
         await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
 
-@dp.callback_query_handler(lambda x: str(x.data).startswith('main'))
-async def command_main(call: types.CallbackQuery):
+
+@dp.callback_query_handler(lambda x: x.data.startswith('lang'))
+async def set_language(call: types.CallbackQuery, state: FSMContext):
     try:
         await call.answer()
+        language = call.data.split('_')[1]
+        await state.update_data(language=language)
+
+        # Показать выбор карты после выбора языка
+        reply_markup = await generate_main_keyboard(language)
+        greeting = "Выберите карту" if language == 'ru' else "Choose a map"
+        await bot.send_message(call.from_user.id, greeting, reply_markup=reply_markup)
+    except Exception as e:
+        print(e)
+        await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
+
+
+@dp.callback_query_handler(lambda x: str(x.data).startswith('main'))
+async def command_main(call: types.CallbackQuery, state: FSMContext):
+    try:
+        await call.answer()
+        data = await state.get_data()
+        language = data.get('language', 'en')  # Значение по умолчанию — английский
+
         karta = call.data.split('_')[1]
         print(karta)
 
         if karta == 'mirage':
-            await bot.send_message(call.from_user.id, f'Вы выбрали карту {karta.capitalize()}', reply_markup=await generate_mirage_keyboard())
-        elif karta == 'inferno':
-            await bot.send_message(call.from_user.id, f'Вы выбрали карту {karta.capitalize()}', reply_markup=await generate_inferno_keyboard())
+            text = f'Вы выбрали карту Mirage' if language == 'ru' else 'You selected Mirage'
+            await bot.send_message(call.from_user.id, text, reply_markup=await generate_mirage_keyboard())
         elif karta == 'dust2':
-            await bot.send_message(call.from_user.id, f'Вы выбрали карту {karta.capitalize()}', reply_markup=await generate_dust2_keyboard())
+            text = f'Вы выбрали карту Dust2' if language == 'ru' else 'You selected Dust2'
+            await bot.send_message(call.from_user.id, text, reply_markup=await generate_dust2_keyboard())
+        elif karta == 'inferno':
+            text = f'Вы выбрали карту Inferno' if language == 'ru' else 'You selected Inferno'
+            await bot.send_message(call.from_user.id, text, reply_markup=await generate_inferno_keyboard())
         else:
-            await bot.send_message(call.from_user.id, 'Эта карта пока не поддерживается.')
-
+            text = 'Эта карта пока не поддерживается.' if language == 'ru' else 'This map is not supported yet.'
+            await bot.send_message(call.from_user.id, text)
     except Exception as e:
         print(e)
         await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
+
 
 @dp.callback_query_handler(lambda x: x.data == 'mirage_a')
-async def handle_mirage_a(call: types.CallbackQuery):
+async def handle_mirage_a(call: types.CallbackQuery, state: FSMContext):
     try:
         await call.answer()
-        await bot.send_message(
-            call.from_user.id,
-            'Вы выбрали точку A на карте Mirage. Выберите конкретное местоположение:',
-            reply_markup=await generate_mirage_a_keyboard()
-        )
+        data = await state.get_data()
+        language = data.get('language', 'en')
+
+        text = 'Вы выбрали точку A на карте Mirage. Выберите конкретное местоположение:' if language == 'ru' else 'You selected point A on Mirage. Choose a specific location:'
+        await bot.send_message(call.from_user.id, text, reply_markup=await generate_mirage_a_keyboard())
     except Exception as e:
         print(e)
         await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
 
-# Обработчик для кнопки CT на точке A
+
 @dp.callback_query_handler(lambda x: x.data == 'mirage_a_ct')
-async def handle_mirage_a_ct(call: types.CallbackQuery):
+async def handle_mirage_a_ct(call: types.CallbackQuery, state: FSMContext):
     try:
         await call.answer()
-        photo = InputFile("photo/Mirage/a_CT.png")  # Картинка А, CT
+        data = await state.get_data()
+        language = data.get('language', 'en')
+
+        photo = InputFile("photo/Mirage/a_CT.png")
+        caption_text = "Вы выбрали CT на точке A (Mirage)" if language == 'ru' else "You selected CT on point A (Mirage)"
+
         await bot.send_photo(
             call.from_user.id,
             photo=photo,
-            caption="Вы выбрали CT на точке A (Mirage)",
+            caption=caption_text,
             reply_markup=await generate_mirage_a_ct_keyboard()
         )
     except Exception as e:
         print(e)
         await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
 
-# Отправка видеофайла при выборе "Смотреть видео" для CT
+
 @dp.callback_query_handler(lambda x: x.data == 'ct_watch_video')
-async def watch_video_ct(call: types.CallbackQuery):
+async def watch_video_ct(call: types.CallbackQuery, state: FSMContext):
     try:
         await call.answer()
-        video = InputFile("video/mirage/mir_a_ct.mp4")  # Видео дым CT
+        video = InputFile("video/mirage/mir_a_ct.mp4")
+        data = await state.get_data()
+        language = data.get('language', 'en')
+
+        caption_text = "Видео для CT на точке A (Mirage)" if language == 'ru' else "Video for CT on point A (Mirage)"
         await bot.send_video(
             call.from_user.id,
             video=video,
-            caption="Видео для CT на точке A (Mirage)"
+            caption=caption_text
         )
     except Exception as e:
         print(e)
         await bot.send_message(config.admin_id, 'Ошибка в боте при отправке видео: ' + str(e))
 
-# Обработчик для кнопки Stairs на точке A
-@dp.callback_query_handler(lambda x: x.data == 'mirage_a_stairs')
-async def handle_mirage_a_stairs(call: types.CallbackQuery):
-    try:
-        await call.answer()
-        photo = InputFile("photo/Mirage/a_")  # Картинка для Stairs
-        await bot.send_photo(
-            call.from_user.id,
-            photo=photo,
-            caption="Вы выбрали Stairs на точке A (Mirage)",
-            reply_markup=await generate_mirage_a_stairs_keyboard()
-        )
-    except Exception as e:
-        print(e)
-        await bot.send_message(config.admin_id, 'Ошибка в боте: ' + str(e))
 
-# Отправка видеофайла при выборе "Смотреть видео" для Stairs
-@dp.callback_query_handler(lambda x: x.data == 'stairs_watch_video')
-async def watch_video_stairs(call: types.CallbackQuery):
-    try:
-        await call.answer()
-        video = InputFile("video/mirage/a_stairs.mp4")  # Видео дым для Stairs
-        await bot.send_video(
-            call.from_user.id,
-            video=video,
-            caption="Дым на Stairs на точке A (Mirage)"
-        )
-    except Exception as e:
-        print(e)
-        await bot.send_message(config.admin_id, 'Ошибка в боте при отправке видео: ' + str(e))
-
-# Возврат к выбору точки A (для CT и Stairs)
 @dp.callback_query_handler(lambda x: x.data in ['mir_a_back', 'stairs_back'])
-async def go_back(call: types.CallbackQuery):
+async def go_back(call: types.CallbackQuery, state: FSMContext):
     await call.answer()
+    data = await state.get_data()
+    language = data.get('language', 'en')
+    text = "Возвращаемся к выбору точки A (Mirage)" if language == 'ru' else "Returning to point A (Mirage)"
+
     await bot.send_message(
         call.from_user.id,
-        "Возвращаемся к выбору точки A (Mirage)",
+        text,
         reply_markup=await generate_mirage_a_keyboard()
     )
 
-# Смена карты (для CT и Stairs)
+
 @dp.callback_query_handler(lambda x: x.data in ['ct_change_map', 'stairs_change_map'])
-async def change_map(call: types.CallbackQuery):
+async def change_map(call: types.CallbackQuery, state: FSMContext):
     await call.answer()
+    data = await state.get_data()
+    language = data.get('language', 'en')
+    text = "Выберите карту" if language == 'ru' else "Choose a map"
+
     await bot.send_message(
         call.from_user.id,
-        "Выберите карту",
-        reply_markup=await generate_main_keyboard()
+        text,
+        reply_markup=await generate_main_keyboard(language)
     )
+
 
 executor.start_polling(dp, skip_updates=True)
