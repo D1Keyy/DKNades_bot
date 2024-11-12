@@ -39,7 +39,7 @@ async def generate_mirage_a_keyboard():
     return markup
 
 # Функция для создания вложенной клавиатуры для СT, Точки A на карте Mirage
-async def generate_mirage_a_ct_keyboard():
+async def generate_mirage_a_ct_keyboard(language):
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton('Смотреть видео', callback_data='ct_watch_video'))
     markup.add(InlineKeyboardButton('Вернуться назад', callback_data='mir_a_back'))

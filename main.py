@@ -4,18 +4,13 @@ from aiogram.utils import executor
 from aiogram.types import InputFile
 from aiogram.dispatcher.filters.state import State, StatesGroup
 import config
-from keyboards import (
-    generate_language_keyboard,
+from keyboards import (generate_language_keyboard,
     generate_maps_keyboard,
     generate_mirage_keyboard,
     generate_dust2_keyboard,
     generate_inferno_keyboard,
     generate_mirage_a_keyboard,
-    generate_mirage_a_ct_keyboard,
-    generate_mirage_a_stairs_keyboard
-    generate_mirage_b_keyboard,
-    generate_mirage_b_site_keyboard,
-)
+    generate_mirage_a_ct_keyboard)
 
 bot = Bot(token=config.bot_token)
 dp = Dispatcher(bot)
@@ -56,6 +51,7 @@ async def set_language(call: types.CallbackQuery, state: FSMContext):
     async def command_main(call: types.CallbackQuery, state: FSMContext):
         try:
             await call.answer()
+            await bot.delete_message(call.from_user.id, call.message.message_id)
             data = await state.get_data()
             language = data.get('language', 'en')
 
