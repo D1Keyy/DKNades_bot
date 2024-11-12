@@ -4,6 +4,8 @@ from aiogram.utils import executor
 from aiogram.types import InputFile
 from aiogram.dispatcher.filters.state import State, StatesGroup
 import config
+import db
+
 from keyboards import (generate_language_keyboard,
     generate_maps_keyboard,
     generate_mirage_keyboard,
@@ -11,6 +13,8 @@ from keyboards import (generate_language_keyboard,
     generate_inferno_keyboard,
     generate_mirage_a_keyboard,
     generate_mirage_a_ct_keyboard)
+
+
 
 bot = Bot(token=config.bot_token)
 dp = Dispatcher(bot)
@@ -23,7 +27,7 @@ class UserState(StatesGroup):
 @dp.message_handler(commands='start')
 async def command_start(message: types.Message):
     try:
-        await bot.send_photo(message.from_user.id, InputFile('photo/logo.png'), caption='Welcome! / Добро пожаловать!')
+        await bot.send_photo(message.from_user.id, InputFile('photo/logo.png'), caption=await db.getmessagetext('hi'))
         await bot.send_message(message.from_user.id, "Please select your language / Пожалуйста, выберите язык",
                                reply_markup=await generate_language_keyboard()
         )
